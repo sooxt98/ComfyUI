@@ -8,7 +8,6 @@ from comfy_api.latest import ComfyExtension, io
 import torch
 import folder_paths
 import os
-from pathlib import Path
 
 
 class LongCatImageModelLoader(io.ComfyNode):
