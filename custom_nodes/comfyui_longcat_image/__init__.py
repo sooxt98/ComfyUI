@@ -158,7 +158,7 @@ class LongCatImageTextToImage(io.ComfyNode):
             category="sampling",
             inputs=[
                 LongCatPipe.Input(
-                    "pipe",
+                    "longcat_pipeline",
                     display_name="LongCat Pipeline",
                     tooltip="LongCat-Image pipeline from loader"
                 ),
@@ -237,7 +237,7 @@ class LongCatImageTextToImage(io.ComfyNode):
     @classmethod
     def execute(
         cls,
-        pipe,
+        longcat_pipeline,
         prompt,
         negative_prompt,
         width,
@@ -248,12 +248,12 @@ class LongCatImageTextToImage(io.ComfyNode):
         enable_cfg_renorm,
         enable_prompt_rewrite,
     ) -> io.NodeOutput:
-        if not pipe:
-            raise ValueError("pipe input is required")
+        if not longcat_pipeline:
+            raise ValueError("longcat_pipeline input is required")
 
-        pipeline = pipe["pipe"]
+        pipeline = longcat_pipeline["pipe"]
         
-        if pipe.get("is_edit", False):
+        if longcat_pipeline.get("is_edit", False):
             raise ValueError("This is an edit pipeline. Use LongCatImageEdit node instead.")
 
         # Convert string bools to actual bools
@@ -299,7 +299,7 @@ class LongCatImageEdit(io.ComfyNode):
             category="sampling",
             inputs=[
                 LongCatPipe.Input(
-                    "pipe",
+                    "longcat_pipeline",
                     display_name="LongCat Pipeline",
                     tooltip="LongCat-Image-Edit pipeline from loader"
                 ),
@@ -354,7 +354,7 @@ class LongCatImageEdit(io.ComfyNode):
     @classmethod
     def execute(
         cls,
-        pipe,
+        longcat_pipeline,
         image,
         prompt,
         negative_prompt,
@@ -362,12 +362,12 @@ class LongCatImageEdit(io.ComfyNode):
         guidance_scale,
         seed,
     ) -> io.NodeOutput:
-        if not pipe:
-            raise ValueError("pipe input is required")
+        if not longcat_pipeline:
+            raise ValueError("longcat_pipeline input is required")
 
-        pipeline = pipe["pipe"]
+        pipeline = longcat_pipeline["pipe"]
         
-        if not pipe.get("is_edit", False):
+        if not longcat_pipeline.get("is_edit", False):
             raise ValueError("This is not an edit pipeline. Use LongCatImageTextToImage node instead.")
 
         # Convert tensor to PIL Image
