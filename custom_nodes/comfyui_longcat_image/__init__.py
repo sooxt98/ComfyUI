@@ -5,9 +5,17 @@ https://github.com/meituan-longcat/LongCat-Image
 
 from typing_extensions import override
 from comfy_api.latest import ComfyExtension, io
+from comfy_api.latest._io import comfytype, ComfyTypeIO
 import torch
 import folder_paths
 import os
+
+
+# Define custom type for LongCat pipeline
+@comfytype(io_type="LONGCAT_PIPE")
+class LongCatPipe(ComfyTypeIO):
+    """Custom type for LongCat-Image pipeline"""
+    Type = dict
 
 
 class LongCatImageModelLoader(io.ComfyNode):
@@ -36,8 +44,7 @@ class LongCatImageModelLoader(io.ComfyNode):
                 ),
             ],
             outputs=[
-                io.Output(
-                    "LONGCAT_PIPE",
+                LongCatPipe.Output(
                     display_name="LongCat Pipeline",
                     tooltip="LongCat-Image pipeline for generation"
                 ),
@@ -150,8 +157,8 @@ class LongCatImageTextToImage(io.ComfyNode):
             display_name="LongCat-Image Text to Image",
             category="sampling",
             inputs=[
-                io.Input(
-                    "LONGCAT_PIPE",
+                LongCatPipe.Input(
+                    "pipe",
                     display_name="LongCat Pipeline",
                     tooltip="LongCat-Image pipeline from loader"
                 ),
@@ -230,6 +237,7 @@ class LongCatImageTextToImage(io.ComfyNode):
     @classmethod
     def execute(
         cls,
+        pipe,
         prompt,
         negative_prompt,
         width,
@@ -239,15 +247,13 @@ class LongCatImageTextToImage(io.ComfyNode):
         seed,
         enable_cfg_renorm,
         enable_prompt_rewrite,
-        **kwargs
     ) -> io.NodeOutput:
-        pipeline_data = kwargs.get("LONGCAT_PIPE")
-        if not pipeline_data:
-            raise ValueError("LONGCAT_PIPE input is required")
+        if not pipe:
+            raise ValueError("pipe input is required")
 
-        pipe = pipeline_data["pipe"]
+        pipeline = pipe["pipe"]
         
-        if pipeline_data.get("is_edit", False):
+        if pipe.get("is_edit", False):
             raise ValueError("This is an edit pipeline. Use LongCatImageEdit node instead.")
 
         # Convert string bools to actual bools
@@ -257,7 +263,7 @@ class LongCatImageTextToImage(io.ComfyNode):
         # Generate image
         generator = torch.Generator("cpu").manual_seed(seed)
         
-        result = pipe(
+        result = pipeline(
             prompt,
             negative_prompt=negative_prompt,
             height=height,
@@ -292,8 +298,8 @@ class LongCatImageEdit(io.ComfyNode):
             display_name="LongCat-Image Edit",
             category="sampling",
             inputs=[
-                io.Input(
-                    "LONGCAT_PIPE",
+                LongCatPipe.Input(
+                    "pipe",
                     display_name="LongCat Pipeline",
                     tooltip="LongCat-Image-Edit pipeline from loader"
                 ),
@@ -348,21 +354,20 @@ class LongCatImageEdit(io.ComfyNode):
     @classmethod
     def execute(
         cls,
+        pipe,
         image,
         prompt,
         negative_prompt,
         steps,
         guidance_scale,
         seed,
-        **kwargs
     ) -> io.NodeOutput:
-        pipeline_data = kwargs.get("LONGCAT_PIPE")
-        if not pipeline_data:
-            raise ValueError("LONGCAT_PIPE input is required")
+        if not pipe:
+            raise ValueError("pipe input is required")
 
-        pipe = pipeline_data["pipe"]
+        pipeline = pipe["pipe"]
         
-        if not pipeline_data.get("is_edit", False):
+        if not pipe.get("is_edit", False):
             raise ValueError("This is not an edit pipeline. Use LongCatImageTextToImage node instead.")
 
         # Convert tensor to PIL Image
@@ -376,7 +381,7 @@ class LongCatImageEdit(io.ComfyNode):
         # Generate edited image
         generator = torch.Generator("cpu").manual_seed(seed)
         
-        result = pipe(
+        result = pipeline(
             pil_image,
             prompt,
             negative_prompt=negative_prompt,
